@@ -6,6 +6,8 @@ RUN set -x; \
         apt-get update \
         && apt-get install -y --no-install-recommends \
             ca-certificates \
+            socat \
+            supervisor \
             curl \
             node-less \
             node-clean-css \
@@ -41,13 +43,21 @@ RUN mkdir -p /mnt/extra-addons \
 VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
 
 # Expose Odoo services
-EXPOSE 8069 8071
+EXPOSE 80 8071
 
 # Set the default config file
 ENV OPENERP_SERVER /etc/odoo/openerp-server.conf
 
-# Set default user when running the container
-USER odoo
+ENV PORT 8069
+
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+COPY sudoers /etc/sudoers
+COPY setup.sh /setup.sh
+
+RUN mkdir -p /var/log/supervisor
+RUN chown odoo /var/log/supervisor
+
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["openerp-server"]
+CMD ["/usr/bin/supervisord"]
